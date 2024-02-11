@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'dockerized-gci'
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        gci_version: [latest, v0.12.1, v0.11.2]
+
+    env:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      GCI_VERSION: ${{ matrix.gci_version }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Push Docker Image
+        run: |
+          bash ./docker_push.sh "${GCI_VERSION}"
